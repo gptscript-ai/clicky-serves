@@ -71,16 +71,17 @@ func execFileStreamWithEvents(ctx context.Context, l *slog.Logger, w http.Respon
 func processOutputStream(l *slog.Logger, w http.ResponseWriter, stdout, stderr io.Reader, wait func() error) {
 	setStreamingHeaders(w)
 
+	lock := new(sync.Mutex)
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		streamOutput(l, w, stdout, "stdout")
+		streamOutput(lock, l, w, stdout, "stdout")
 	}()
 
 	go func() {
 		defer wg.Done()
-		streamOutput(l, w, stderr, "stderr")
+		streamOutput(lock, l, w, stderr, "stderr")
 	}()
 
 	waitAndFinishStream(l, w, "", func() error {
@@ -90,7 +91,7 @@ func processOutputStream(l *slog.Logger, w http.ResponseWriter, stdout, stderr i
 }
 
 // streamOutput will stream the output of the tool to the response as server sent events.
-func streamOutput(l *slog.Logger, w http.ResponseWriter, stream io.Reader, key string) {
+func streamOutput(lock *sync.Mutex, l *slog.Logger, w http.ResponseWriter, stream io.Reader, key string) {
 	output := strings.Builder{}
 	m := map[string]string{key: ""}
 	scan := bufio.NewScanner(stream)
@@ -103,7 +104,11 @@ func streamOutput(l *slog.Logger, w http.ResponseWriter, stream io.Reader, key s
 		m[key] = output.String() + "\n"
 
 		l.Debug("wrote event", "event", output.String(), "key", key)
+
+		// Lock the mutex and write the event to ensure that only one event is written at a time.
+		lock.Lock()
 		writeServerSentEvent(l, w, m)
+		lock.Unlock()
 	}
 }
 
