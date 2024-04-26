@@ -203,7 +203,7 @@ func waitAndFinishStream(l *slog.Logger, w http.ResponseWriter, stdErr string, w
 	}
 
 	// Now that we have received all events, send the DONE event.
-	_, err = w.Write([]byte("data: DONE\n\n"))
+	_, err = w.Write([]byte("data: [DONE]\n\n"))
 	if err == nil {
 		if f, ok := w.(http.Flusher); ok {
 			f.Flush()
