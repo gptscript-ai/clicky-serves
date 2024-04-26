@@ -5,8 +5,9 @@ import (
 )
 
 type toolRequest struct {
-	gptscript.Opts `json:",inline"`
-	gptscript.Tool `json:",inline"`
+	gptscript.Opts     `json:",inline"`
+	gptscript.Tool     `json:",inline"`
+	gptscript.FreeForm `json:",inline"`
 }
 
 type fileRequest struct {

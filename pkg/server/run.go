@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,7 +19,7 @@ import (
 const callTypeConfirm = "callConfirm"
 
 // execTool runs the tool with the given options, and writes the output to the response.
-func execTool(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool *gptscript.Tool) {
+func execTool(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool fmt.Stringer) {
 	out, err := gptscript.ExecTool(ctx, opts, tool)
 	if err != nil {
 		l.Error("failed to execute tool", "error", err)
@@ -44,7 +43,7 @@ func execFile(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts g
 }
 
 // execToolStream runs the tool with the given options, and streams the stdout and stderr of the tool to the response as server sent events.
-func execToolStream(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool *gptscript.Tool) {
+func execToolStream(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool fmt.Stringer) {
 	stdout, stderr, wait := gptscript.StreamExecTool(ctx, opts, tool)
 	processOutputStream(l, w, stdout, stderr, wait)
 }
@@ -56,7 +55,7 @@ func execFileStream(ctx context.Context, l *slog.Logger, w http.ResponseWriter, 
 }
 
 // execToolStreamWithEvents runs the tool with the given options, and streams the events to the response as server sent events.
-func execToolStreamWithEvents(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool *gptscript.Tool) {
+func execToolStreamWithEvents(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool fmt.Stringer) {
 	stdout, stderr, events, wait := gptscript.StreamExecToolWithEvents(ctx, opts, tool)
 	processEventStreamOutput(l, w, stdout, stderr, events, wait)
 }
@@ -92,23 +91,19 @@ func processOutputStream(l *slog.Logger, w http.ResponseWriter, stdout, stderr i
 
 // streamOutput will stream the output of the tool to the response as server sent events.
 func streamOutput(lock *sync.Mutex, l *slog.Logger, w http.ResponseWriter, stream io.Reader, key string) {
-	output := strings.Builder{}
-	m := map[string]string{key: ""}
-	scan := bufio.NewScanner(stream)
-	for scan.Scan() {
-		if len(scan.Bytes()) == 0 {
+	s := bufio.NewScanner(stream)
+	s.Split(scan)
+	for s.Scan() {
+		if len(s.Bytes()) == 0 {
 			continue
 		}
 
-		output.Write(scan.Bytes())
-		m[key] = output.String() + "\n"
-
-		l.Debug("wrote event", "event", output.String(), "key", key)
-
 		// Lock the mutex and write the event to ensure that only one event is written at a time.
 		lock.Lock()
-		writeServerSentEvent(l, w, m)
+		writeServerSentEvent(l, w, map[string]string{key: s.Text()})
 		lock.Unlock()
+
+		l.Debug("wrote event", "event", s.Text(), "key", key)
 	}
 }
 
@@ -117,7 +112,7 @@ func streamOutput(lock *sync.Mutex, l *slog.Logger, w http.ResponseWriter, strea
 func processEventStreamOutput(l *slog.Logger, w http.ResponseWriter, stdout, stderr, events io.Reader, wait func() error) {
 	setStreamingHeaders(w)
 
-	eventsWritten := streamEvents(l, w, events)
+	streamEvents(l, w, events)
 
 	// Read the output of the script.
 	out, err := io.ReadAll(stdout)
@@ -132,27 +127,25 @@ func processEventStreamOutput(l *slog.Logger, w http.ResponseWriter, stdout, std
 		return
 	}
 
-	if !eventsWritten {
-		// If no events were sent, then an error occurred when trying to run the tool.
-		// Send an event with the error and the run tool object ID.
-		writeServerSentEvent(l, w, map[string]any{
-			"time":   time.Now(),
-			"err":    string(stdErr),
-			"output": string(out),
-		})
-	}
+	writeServerSentEvent(l, w, map[string]any{
+		"time":   time.Now(),
+		"stderr": string(stdErr),
+	})
+	writeServerSentEvent(l, w, map[string]any{
+		"time":   time.Now(),
+		"stdout": string(out),
+	})
 
 	waitAndFinishStream(l, w, string(stdErr), wait)
 }
 
 // streamEvents will stream the events of the tool to the response as server sent events.
 // This looks for and tries to handle confirm events as well. However, that currently is not implemented in the SDK.
-func streamEvents(l *slog.Logger, w http.ResponseWriter, events io.Reader) bool {
+func streamEvents(l *slog.Logger, w http.ResponseWriter, events io.Reader) {
 	var (
-		eventsWritten bool
-		lastRunID     string
-		eventBuffer   []map[string]any
-		buffer        = bufio.NewScanner(events)
+		lastRunID   string
+		eventBuffer []map[string]any
+		buffer      = bufio.NewScanner(events)
 	)
 
 	l.Debug("receiving events")
@@ -184,11 +177,9 @@ func streamEvents(l *slog.Logger, w http.ResponseWriter, events io.Reader) bool 
 		lastRunID = fmt.Sprint(e["runID"])
 
 		writeServerSentEvent(l, w, e)
-		eventsWritten = true
 	}
 
 	l.Debug("done receiving events")
-	return eventsWritten
 }
 
 // waitAndFinishStream will wait for the tool to finish running, and will send any error events, if necessary.
@@ -268,4 +259,21 @@ func setStreamingHeaders(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+}
+
+// scan is a split function for a bufio.Scanner that returns whatever data is in the buffer.
+func scan(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+
+	return len(data), dropCR(data), nil
+}
+
+// dropCR drops a terminal \r from the data.
+func dropCR(data []byte) []byte {
+	if len(data) > 0 && data[len(data)-1] == '\r' {
+		return data[0 : len(data)-1]
+	}
+	return data
 }

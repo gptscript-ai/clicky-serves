@@ -3,8 +3,8 @@ github.com/acorn-io/cmd v0.0.0-20240404013709-34f690bde37b/go.mod h1:9jrYuzTJCv6
 github.com/cpuguy83/go-md2man/v2 v2.0.3/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/gptscript-ai/go-gptscript v0.0.0-20240424203657-0c7bea686246 h1:HUWztyG8FFxHE4Qk42BaJm0JkKxsK+v3HQIsndcsJsQ=
-github.com/gptscript-ai/go-gptscript v0.0.0-20240424203657-0c7bea686246/go.mod h1:PYOaKMy/c6OeygsbCgKYgmWU5ad2H7NaJKuyrofLMHs=
+github.com/gptscript-ai/go-gptscript v0.0.0-20240426002709-52306d54d13f h1:hi83F27yorz/2qxnPpkEGPaWwndOnz6Tkh76wpowF1w=
+github.com/gptscript-ai/go-gptscript v0.0.0-20240426002709-52306d54d13f/go.mod h1:PYOaKMy/c6OeygsbCgKYgmWU5ad2H7NaJKuyrofLMHs=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/rs/cors v1.11.0 h1:0B9GE/r9Bc2UxRMMtymBkHTenPkHDv0CW4Y98GBY+po=
