@@ -1,8 +1,6 @@
 package server
 
-import (
-	"github.com/gptscript-ai/go-gptscript"
-)
+import "github.com/gptscript-ai/go-gptscript"
 
 type toolRequest struct {
 	gptscript.Opts     `json:",inline"`

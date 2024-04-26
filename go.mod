@@ -5,7 +5,7 @@ go 1.22.2
 require (
 	github.com/acorn-io/cmd v0.0.0-20240404013709-34f690bde37b
 	github.com/google/uuid v1.6.0
-	github.com/gptscript-ai/go-gptscript v0.0.0-20240426002709-52306d54d13f
+	github.com/gptscript-ai/go-gptscript v0.0.0-20240426191539-ce0e7393e74e
 	github.com/rs/cors v1.11.0
 	github.com/spf13/cobra v1.8.0
 )
