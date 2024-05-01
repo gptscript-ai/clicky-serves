@@ -18,6 +18,28 @@ import (
 
 const callTypeConfirm = "callConfirm"
 
+// parse will parse the file and return the corresponding Document.
+func parse(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, path, input string) {
+	l.Debug("parsing file", "file", path, "input", input)
+	var (
+		out []gptscript.Node
+		err error
+	)
+
+	if input != "" {
+		out, err = gptscript.ParseTool(ctx, input)
+	} else {
+		out, err = gptscript.Parse(ctx, path, opts)
+	}
+	if err != nil {
+		l.Error("failed to parse file", "error", err)
+		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to parse file: %w", err))
+		return
+	}
+
+	writeResponse(w, map[string]any{"stdout": map[string]any{"nodes": out}})
+}
+
 // execTool runs the tool with the given options, and writes the output to the response.
 func execTool(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts gptscript.Opts, tool fmt.Stringer) {
 	out, err := gptscript.ExecTool(ctx, opts, tool)
@@ -27,7 +49,7 @@ func execTool(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts g
 		return
 	}
 
-	writeResponse(w, map[string]string{"output": out})
+	writeResponse(w, map[string]string{"stdout": out})
 }
 
 // execFile runs the file with the given options, and writes the output to the response.
@@ -39,7 +61,7 @@ func execFile(ctx context.Context, l *slog.Logger, w http.ResponseWriter, opts g
 		return
 	}
 
-	writeResponse(w, map[string]string{"output": out})
+	writeResponse(w, map[string]string{"stdout": out})
 }
 
 // execToolStream runs the tool with the given options, and streams the stdout and stderr of the tool to the response as server sent events.

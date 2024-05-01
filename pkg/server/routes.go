@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gptscript-ai/go-gptscript"
@@ -28,6 +29,9 @@ func addRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /run-file", execFileHandler(execFile))
 	mux.HandleFunc("POST /run-file-stream", execFileHandler(execFileStream))
 	mux.HandleFunc("POST /run-file-stream-with-events", execFileHandler(execFileStreamWithEvents))
+
+	mux.HandleFunc("POST /parse", execFileHandler(parse))
+	mux.HandleFunc("POST /fmt", fmtDocument)
 }
 
 // health just provides an endpoint for checking whether the server is running and accessible.
@@ -43,7 +47,7 @@ func version(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeResponse(w, map[string]any{"output": out})
+	writeResponse(w, map[string]any{"stdout": out})
 }
 
 // listTools will return the output of `gptscript --list-tools`
@@ -54,7 +58,7 @@ func listTools(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeResponse(w, map[string]any{"output": out})
+	writeResponse(w, map[string]any{"stdout": out})
 }
 
 // listModels will return the output of `gptscript --list-models`
@@ -65,7 +69,7 @@ func listModels(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeResponse(w, map[string]any{"output": out})
+	writeResponse(w, map[string]any{"stdout": strings.Join(out, "\n")})
 }
 
 // execToolHandler is a general handler for executing tools with gptscript. This is mainly responsible for parsing the request body.
@@ -87,7 +91,7 @@ func execToolHandler(process func(ctx context.Context, l *slog.Logger, w http.Re
 		if reqObject.Content != "" {
 			process(ctx, l, w, reqObject.Opts, &reqObject.FreeForm)
 		} else {
-			process(ctx, l, w, reqObject.Opts, &reqObject.Tool)
+			process(ctx, l, w, reqObject.Opts, &reqObject.SimpleTool)
 		}
 	}
 }
@@ -111,4 +115,27 @@ func execFileHandler(process func(ctx context.Context, l *slog.Logger, w http.Re
 
 		process(ctx, l, w, reqObject.Opts, reqObject.File, reqObject.Input)
 	}
+}
+
+// fmtDocument will produce a string representation of the document.
+func fmtDocument(w http.ResponseWriter, r *http.Request) {
+	doc := new(gptscript.Document)
+	if err := json.NewDecoder(r.Body).Decode(doc); err != nil {
+		writeError(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err))
+		return
+	}
+
+	l := ccontext.GetLogger(r.Context())
+
+	l.Debug("formatting document", "document", doc)
+
+	ctx, cancel := context.WithTimeout(r.Context(), toolRunTimeout)
+	defer cancel()
+
+	out, err := gptscript.Fmt(ctx, doc.Nodes)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, fmt.Errorf("failed to format document: %w", err))
+	}
+
+	writeResponse(w, map[string]string{"stdout": out})
 }
