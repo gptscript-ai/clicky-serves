@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/gptscript-ai/clicky-serves/pkg/server"
+	"github.com/gptscript-ai/clicky-serves/pkg/version"
 	"github.com/spf13/cobra"
-	"github.com/thedadams/clicky-serves/pkg/server"
 )
 
 type Server struct {
@@ -21,4 +21,9 @@ func (s *Server) Run(cmd *cobra.Command, _ []string) error {
 	return server.Start(cmd.Context(), server.Config{
 		Port: s.ServerPort,
 	})
+}
+
+func (s *Server) Customize(cmd *cobra.Command) {
+	cmd.Use = version.ProgramName + " [flags]"
+	cmd.Version = version.Get().String()
 }

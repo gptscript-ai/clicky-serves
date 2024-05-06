@@ -1,0 +1,52 @@
+dist: releases
+snapshot:
+  name_template: '{{ trimprefix .Summary "v" }}'
+
+builds:
+  - id: default
+    binary: clicky-serves
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s
+      - -w
+      - -X "github.com/gptscript-ai/clicky-serves/pkg/version.Tag=v{{ .Version }}"
+
+universal_binaries:
+  - id: mac
+    ids:
+      - default
+    replace: true
+
+archives:
+  - id: default
+    builds:
+      - default
+      - mac
+    name_template: 'clicky-serves-v{{ .Version }}-{{ if eq .Os "darwin" }}macOS-universal{{ else }}{{ .Os }}-{{ .Arch }}{{ .Arm }}{{ end }}'
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^Merge pull request"
+
+release:
+  github:
+    owner: gptscript-ai
+    name: clicky-serves
+  prerelease: auto
