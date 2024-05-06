@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gptscript-ai/clicky-serves/pkg/server"
 	"github.com/spf13/cobra"
 	"github.com/thedadams/clicky-serves/pkg/server"
 )

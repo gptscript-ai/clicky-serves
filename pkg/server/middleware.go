@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/thedadams/clicky-serves/pkg/context"
-	"github.com/thedadams/clicky-serves/pkg/log"
+	"github.com/gptscript-ai/clicky-serves/pkg/context"
+	"github.com/gptscript-ai/clicky-serves/pkg/log"
 )
 
 type middleware func(http.Handler) http.Handler

@@ -1,4 +1,4 @@
-module github.com/thedadams/clicky-serves
+module github.com/gptscript-ai/clicky-serves
 
 go 1.22.2
 

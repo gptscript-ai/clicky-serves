@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	ccontext "github.com/gptscript-ai/clicky-serves/pkg/context"
 	"github.com/gptscript-ai/go-gptscript"
-	ccontext "github.com/thedadams/clicky-serves/pkg/context"
 )
 
 const toolRunTimeout = 15 * time.Minute

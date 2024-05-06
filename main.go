@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/acorn-io/cmd"
-	"github.com/thedadams/clicky-serves/pkg/cli"
+	"github.com/gptscript-ai/clicky-serves/pkg/cli"
 )
 
 func main() {

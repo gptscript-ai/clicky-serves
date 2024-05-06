@@ -4,7 +4,7 @@ import (
 	"context"
 	"log/slog"
 
-	ccontext "github.com/thedadams/clicky-serves/pkg/context"
+	ccontext "github.com/gptscript-ai/clicky-serves/pkg/context"
 )
 
 func New() *slog.Logger {
