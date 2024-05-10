@@ -36,7 +36,7 @@ func logRequest(h http.Handler) http.Handler {
 			if err := recover(); err != nil {
 				l.Error("Panic", "error", err, "stack", string(debug.Stack()))
 				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(`{"error": "encountered an unexpected error"}`))
+				_, _ = w.Write([]byte(`{"stderr": "encountered an unexpected error"}`))
 			}
 		}()
 

@@ -248,12 +248,12 @@ func writeResponse(w http.ResponseWriter, v any) {
 func writeError(w http.ResponseWriter, code int, err error) {
 	w.WriteHeader(code)
 	resp := map[string]any{
-		"error": err.Error(),
+		"stderr": err.Error(),
 	}
 
 	b, err := json.Marshal(resp)
 	if err != nil {
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"error": "%s"}`, err.Error())))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"stderr": "%s"}`, err.Error())))
 		return
 	}
 
