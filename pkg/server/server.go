@@ -13,14 +13,15 @@ import (
 )
 
 type Config struct {
-	Port string
+	Port         string
+	GPTScriptBin string
 }
 
 func Start(ctx context.Context, config Config) error {
 	sigCtx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGKILL)
 	defer cancel()
 
-	addRoutes(http.DefaultServeMux)
+	addRoutes(http.DefaultServeMux, config)
 
 	server := http.Server{
 		Addr: ":" + config.Port,

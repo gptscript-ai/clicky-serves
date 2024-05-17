@@ -10,7 +10,8 @@ import (
 )
 
 type Server struct {
-	ServerPort string `usage:"Server port" default:"8080" env:"CLICKY_SERVES_SERVER_PORT"`
+	ServerPort   string `usage:"Server port" default:"8080" env:"CLICKY_SERVES_SERVER_PORT"`
+	GPTScriptBin string `usage:"GPTScript binary" default:"gptscript" env:"GPTSCRIPT_BIN"`
 }
 
 func (s *Server) Run(cmd *cobra.Command, _ []string) error {
@@ -19,7 +20,8 @@ func (s *Server) Run(cmd *cobra.Command, _ []string) error {
 	}
 
 	return server.Start(cmd.Context(), server.Config{
-		Port: s.ServerPort,
+		Port:         s.ServerPort,
+		GPTScriptBin: s.GPTScriptBin,
 	})
 }
 
